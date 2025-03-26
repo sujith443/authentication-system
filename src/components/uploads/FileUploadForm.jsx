@@ -90,6 +90,9 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
     setIsUploading(true);
     setError(null);
     
+    // Create object URL for the file to enable download/preview
+    const fileUrl = URL.createObjectURL(file);
+    
     // Simulate file upload with progress
     const simulateUpload = () => {
       let progress = 0;
@@ -106,10 +109,11 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
               id: `file${Date.now()}`,
               name: file.name,
               uploadDate: new Date().toISOString().split('T')[0],
-              status: 'pending',
               size: formatFileSize(file.size),
               description: description,
               category: category,
+              url: fileUrl, // Store the URL for download/preview
+              fileObject: file // Store the actual file object
             };
             
             onUploadSuccess(uploadedFile);
