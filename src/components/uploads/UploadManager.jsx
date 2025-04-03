@@ -11,74 +11,11 @@ const UploadManager = ({ user }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
-  const [showContent, setShowContent] = useState(false);
-  const [fileContent, setFileContent] = useState('');
 
   useEffect(() => {
-    // Fetch files - replace with actual API call
-    const fetchFiles = async () => {
-      try {
-        // Mock API call with timeout
-        setTimeout(() => {
-          // Mock data with URLs for demo content
-          const mockFiles = [
-            {
-              id: 'file1',
-              name: 'Assignment1_CSE303.pdf',
-              uploadDate: '2025-03-20',
-              size: '2.4 MB',
-              description: 'Assignment submission for CSE303 course',
-              url: 'https://www.africau.edu/images/default/sample.pdf', // Sample PDF URL for demo
-              demoContent: 'This is a sample assignment about data structures and algorithms. The assignment covers topics like sorting algorithms, binary search trees, and graph traversal methods.'
-            },
-            {
-              id: 'file2',
-              name: 'Project_Proposal.docx',
-              uploadDate: '2025-03-18',
-              size: '1.8 MB',
-              description: 'Final year project proposal',
-              url: 'https://file-examples.com/storage/feaab43882587570228d9a6/2017/02/file-sample_100kB.docx', // Sample DOCX URL for demo
-              demoContent: 'Project proposal for a Smart Campus Application that includes features like attendance tracking, campus navigation, and real-time class notifications.'
-            },
-            {
-              id: 'file3',
-              name: 'Lab_Report_ECE206.pdf',
-              uploadDate: '2025-03-15',
-              size: '3.2 MB',
-              description: 'Lab report for ECE206 practical',
-              url: 'https://www.africau.edu/images/default/sample.pdf', // Sample PDF URL for demo
-              demoContent: 'Lab report documenting experiments on digital circuit design, including truth tables, circuit diagrams, and oscilloscope readings.'
-            },
-            {
-              id: 'file4',
-              name: 'Semester_Registration.pdf',
-              uploadDate: '2025-03-10',
-              size: '0.9 MB',
-              description: 'Semester registration form',
-              url: 'https://www.africau.edu/images/default/sample.pdf', // Sample PDF URL for demo
-              demoContent: 'Registration form for the 6th semester with selected core and elective courses.'
-            },
-            {
-              id: 'file5',
-              name: 'Research_Paper_Draft.pdf',
-              uploadDate: '2025-03-05',
-              size: '4.6 MB',
-              description: 'Draft of research paper for publication',
-              url: 'https://www.africau.edu/images/default/sample.pdf', // Sample PDF URL for demo
-              demoContent: 'Research paper on Machine Learning applications in healthcare, focusing on predictive analytics for patient outcomes.'
-            }
-          ];
-          
-          setFiles(mockFiles);
-          setIsLoading(false);
-        }, 1000);
-      } catch (err) {
-        setError('Failed to load files');
-        setIsLoading(false);
-      }
-    };
-
-    fetchFiles();
+    // Start with an empty array instead of demo files
+    setFiles([]);
+    setIsLoading(false);
   }, []);
 
   const handleUploadSuccess = (newFile) => {
@@ -109,30 +46,110 @@ const UploadManager = ({ user }) => {
 
   const handleViewFile = (file) => {
     setSelectedFile(file);
-    
-    // For demo files, show their content
-    if (file.demoContent) {
-      setFileContent(file.demoContent);
-      setShowContent(true);
-    }
   };
 
   const handleDownloadFile = (file) => {
-    // Create an anchor element
-    const link = document.createElement('a');
-    link.href = file.url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // Create an anchor element
+      const link = document.createElement('a');
+      link.href = file.url;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      alert("Error downloading file. Please try again.");
+    }
   };
 
   const handlePrintFile = (file) => {
-    // Open file URL in a new window and print
-    const printWindow = window.open(file.url, '_blank');
-    printWindow.onload = function() {
-      printWindow.print();
-    };
+    try {
+      // Open file URL in a new window and print
+      const printWindow = window.open(file.url, '_blank');
+      if (printWindow) {
+        setTimeout(() => {
+          printWindow.print();
+        }, 1000); // Give it time to load before printing
+      } else {
+        alert("Please allow pop-ups to print the file");
+      }
+    } catch (error) {
+      console.error("Error printing file:", error);
+      alert("There was an error printing the file. Please try downloading it first.");
+    }
+  };
+
+  // Get file type to handle preview correctly
+  const getFileType = (fileName) => {
+    const extension = fileName.split('.').pop().toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(extension)) {
+      return 'image';
+    } else if (['pdf'].includes(extension)) {
+      return 'pdf';
+    } else if (['doc', 'docx'].includes(extension)) {
+      return 'word';
+    } else if (['xls', 'xlsx'].includes(extension)) {
+      return 'excel';
+    } else if (['ppt', 'pptx'].includes(extension)) {
+      return 'powerpoint';
+    } else if (['txt', 'csv'].includes(extension)) {
+      return 'text';
+    } else {
+      return 'other';
+    }
+  };
+
+  // Function to render the appropriate preview based on file type
+  const renderFilePreview = (file) => {
+    const fileType = getFileType(file.name);
+    
+    switch (fileType) {
+      case 'image':
+        return (
+          <div className="text-center">
+            <img 
+              src={file.url} 
+              alt={file.name} 
+              className="img-fluid rounded" 
+              style={{ maxHeight: '500px' }}
+            />
+          </div>
+        );
+      case 'pdf':
+        return (
+          <div className="ratio ratio-16x9">
+            <iframe 
+              src={file.url}
+              title={file.name}
+              className="border rounded"
+              allowFullScreen
+            ></iframe>
+          </div>
+        );
+      case 'text':
+        // For text files, we could fetch and display the content
+        return (
+          <div className="p-3 border rounded bg-light">
+            <div className="text-center mb-3">
+              <p>Text preview is not available directly. Please use the buttons below to view this file.</p>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="text-center p-4 border rounded">
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>
+              {fileType === 'word' ? '📄' : 
+               fileType === 'excel' ? '📊' :
+               fileType === 'powerpoint' ? '📑' : '📁'}
+            </div>
+            <h5>{file.name}</h5>
+            <p className="text-muted">Preview not available for this file type.</p>
+            <p>Please use the buttons below to open or download this file.</p>
+          </div>
+        );
+    }
   };
 
   // Function to format date
@@ -154,7 +171,7 @@ const UploadManager = ({ user }) => {
               variant="primary" 
               onClick={() => setShowUploadModal(true)}
             >
-              <i className="bi bi-upload me-2"></i>
+              <span className="me-2">↑</span>
               Upload New File
             </Button>
           </div>
@@ -185,7 +202,7 @@ const UploadManager = ({ user }) => {
               ) : files.length === 0 ? (
                 <div className="text-center py-4">
                   <div className="mb-3">
-                    <i className="bi bi-file-earmark-x text-muted" style={{ fontSize: '3rem' }}></i>
+                    <span style={{ fontSize: '3rem' }}>📂</span>
                   </div>
                   <h5>No files found</h5>
                   <p className="text-muted">
@@ -209,8 +226,12 @@ const UploadManager = ({ user }) => {
                         <tr key={file.id}>
                           <td>
                             <div className="d-flex align-items-center">
-                              <div className="file-icon me-2">
-                                <i className={`bi bi-file-earmark-${file.name.endsWith('.pdf') ? 'pdf' : 'word'} text-primary fs-5`}></i>
+                              <div className="me-2">
+                                {getFileType(file.name) === 'image' ? '🖼️' :
+                                 getFileType(file.name) === 'pdf' ? '📄' :
+                                 getFileType(file.name) === 'word' ? '📝' :
+                                 getFileType(file.name) === 'excel' ? '📊' :
+                                 getFileType(file.name) === 'powerpoint' ? '📑' : '📁'}
                               </div>
                               <div>
                                 <span className="fw-medium">{file.name}</span>
@@ -228,7 +249,7 @@ const UploadManager = ({ user }) => {
                                 onClick={() => handleViewFile(file)}
                                 title="View File"
                               >
-                                <i className="bi bi-eye"></i>
+                                👁️ View
                               </Button>
                               <Button 
                                 variant="outline-success" 
@@ -236,7 +257,7 @@ const UploadManager = ({ user }) => {
                                 onClick={() => handleDownloadFile(file)}
                                 title="Download File"
                               >
-                                <i className="bi bi-download"></i>
+                                ⬇️ Download
                               </Button>
                               <Button 
                                 variant="outline-danger" 
@@ -244,7 +265,7 @@ const UploadManager = ({ user }) => {
                                 onClick={() => handleDeleteFile(file)}
                                 title="Delete File"
                               >
-                                <i className="bi bi-trash"></i>
+                                🗑️ Delete
                               </Button>
                             </div>
                           </td>
@@ -297,70 +318,62 @@ const UploadManager = ({ user }) => {
         </Modal.Footer>
       </Modal>
       
-      {/* File View Modal */}
+      {/* File View Modal with Enhanced Preview */}
       <Modal
         show={selectedFile !== null}
-        onHide={() => {
-          setSelectedFile(null);
-          setShowContent(false);
-          setFileContent('');
-        }}
+        onHide={() => setSelectedFile(null)}
         size="lg"
         centered
       >
-        <Modal.Header closeButton>
-          <Modal.Title>{selectedFile?.name}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {showContent ? (
-            <div className="p-3 border rounded">
-              <h5 className="mb-3">File Content Preview</h5>
-              <p>{fileContent}</p>
-              <Button
-                variant="outline-primary"
-                size="sm"
-                onClick={() => {
-                  setShowContent(false);
-                  // Open file in a new tab
-                  window.open(selectedFile.url, '_blank');
-                }}
-              >
-                View Full Document
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center p-5">
-              <i className={`bi bi-file-earmark-${selectedFile?.name.endsWith('.pdf') ? 'pdf' : 'word'} text-primary`} style={{ fontSize: '4rem' }}></i>
-              <h5 className="mt-3">{selectedFile?.name}</h5>
-              <p className="mb-4 text-muted">{selectedFile?.description}</p>
-              <div className="d-flex justify-content-center gap-3">
+        {selectedFile && (
+          <>
+            <Modal.Header closeButton>
+              <Modal.Title>{selectedFile.name}</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              {/* File Preview Section */}
+              <div className="mb-4">
+                {renderFilePreview(selectedFile)}
+              </div>
+              
+              {/* File Info Section */}
+              <div className="mb-3">
+                <h6>File Information</h6>
+                <div className="row">
+                  <div className="col-md-6">
+                    <p className="mb-1"><strong>Size:</strong> {selectedFile.size}</p>
+                    <p className="mb-1"><strong>Upload Date:</strong> {formatDate(selectedFile.uploadDate)}</p>
+                  </div>
+                  <div className="col-md-6">
+                    <p className="mb-1"><strong>Description:</strong> {selectedFile.description}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="d-flex justify-content-center gap-3 mt-4">
                 <Button 
                   variant="primary"
                   onClick={() => handleDownloadFile(selectedFile)}
                 >
-                  <i className="bi bi-download me-2"></i>
-                  Download
+                  ⬇️ Download
+                </Button>
+                <Button 
+                  variant="success"
+                  onClick={() => window.open(selectedFile.url, '_blank')}
+                >
+                  📄 Open in New Tab
                 </Button>
                 <Button 
                   variant="outline-secondary"
                   onClick={() => handlePrintFile(selectedFile)}
                 >
-                  <i className="bi bi-printer me-2"></i>
-                  Print
+                  🖨️ Print
                 </Button>
-                {selectedFile?.demoContent && (
-                  <Button 
-                    variant="outline-info"
-                    onClick={() => setShowContent(true)}
-                  >
-                    <i className="bi bi-file-text me-2"></i>
-                    View Content
-                  </Button>
-                )}
               </div>
-            </div>
-          )}
-        </Modal.Body>
+            </Modal.Body>
+          </>
+        )}
       </Modal>
     </Container>
   );
