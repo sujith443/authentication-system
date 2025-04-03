@@ -17,6 +17,7 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
     'Lab Report',
     'Research Paper',
     'Registration Form',
+    'Image',
     'Other'
   ];
   
@@ -58,10 +59,32 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
       return;
     }
     
-    // Check file type
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.includes(selectedFile.type)) {
-      setError('Only PDF and Word documents are allowed');
+    // Accept more file types - PDF, Word, Excel, PowerPoint, images, text
+    const allowedTypes = [
+      // Documents
+      'application/pdf', 
+      'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'text/csv',
+      // Images
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/bmp',
+      'image/svg+xml'
+    ];
+    
+    // Check by extension if MIME type isn't reliable
+    const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
+    const validExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'];
+    
+    if (!allowedTypes.includes(selectedFile.type) && !validExtensions.includes(fileExtension)) {
+      setError('Unsupported file type. Please upload documents, images, or text files.');
       return;
     }
     
@@ -113,12 +136,19 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
               description: description,
               category: category,
               url: fileUrl, // Store the URL for download/preview
-              fileObject: file // Store the actual file object
+              fileObject: file, // Store the actual file object
+              uploadedBy: user?.name || 'Admin',
+              uploadedById: user?.id || 'unknown'
             };
             
             onUploadSuccess(uploadedFile);
+            
+            // Reset form
             setIsUploading(false);
             setUploadProgress(0);
+            setFile(null);
+            setDescription('');
+            setCategory('');
           }, 500);
         }
       }, 300);
@@ -141,6 +171,29 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
   const handleBrowseClick = () => {
     fileInputRef.current.click();
   };
+
+  // Helper function to get file icon based on file type
+  const getFileIcon = () => {
+    if (!file) return <i className="bi bi-cloud-arrow-up"></i>;
+    
+    const extension = file.name.split('.').pop().toLowerCase();
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(extension)) {
+      return <i className="bi bi-file-earmark-image"></i>;
+    } else if (extension === 'pdf') {
+      return <i className="bi bi-file-earmark-pdf"></i>;
+    } else if (['doc', 'docx'].includes(extension)) {
+      return <i className="bi bi-file-earmark-word"></i>;
+    } else if (['xls', 'xlsx'].includes(extension)) {
+      return <i className="bi bi-file-earmark-excel"></i>;
+    } else if (['ppt', 'pptx'].includes(extension)) {
+      return <i className="bi bi-file-earmark-ppt"></i>;
+    } else if (['txt', 'csv'].includes(extension)) {
+      return <i className="bi bi-file-earmark-text"></i>;
+    } else {
+      return <i className="bi bi-file-earmark"></i>;
+    }
+  };
   
   return (
     <Form onSubmit={handleSubmit}>
@@ -157,19 +210,28 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={handleBrowseClick}
+          style={{
+            border: '2px dashed #d1d5db', 
+            borderRadius: '0.75rem',
+            padding: '2rem',
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.3s',
+            backgroundColor: file ? '#f8f9ff' : isDragOver ? 'rgba(58, 87, 232, 0.1)' : 'transparent'
+          }}
         >
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
             className="d-none"
-            accept=".pdf,.doc,.docx"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.bmp,.svg"
           />
           
           {file ? (
             <div className="text-center">
-              <div className="mb-2">
-                <i className={`bi bi-file-earmark-${file.name.endsWith('.pdf') ? 'pdf' : 'word'} text-primary fs-3`}></i>
+              <div className="mb-2 fs-3 text-primary">
+                {getFileIcon()}
               </div>
               <p className="mb-1 fw-medium">{file.name}</p>
               <p className="mb-0 text-muted small">{formatFileSize(file.size)}</p>
@@ -177,10 +239,12 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
             </div>
           ) : (
             <div className="text-center">
-              <i className="bi bi-cloud-arrow-up text-primary fs-3 mb-2"></i>
+              <div className="mb-2 fs-3 text-primary">
+                <i className="bi bi-cloud-arrow-up"></i>
+              </div>
               <p className="mb-1">Drag & drop your file here</p>
               <p className="mb-0 text-muted small">or click to browse files</p>
-              <p className="mt-2 text-muted small">Supported formats: PDF, DOC, DOCX (Max 50MB)</p>
+              <p className="mt-2 text-muted small">Supports documents, images, and text files (Max 50MB)</p>
             </div>
           )}
         </div>
@@ -230,7 +294,17 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
           type="submit" 
           disabled={isUploading}
         >
-          {isUploading ? 'Uploading...' : 'Upload File'}
+          {isUploading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Uploading...
+            </>
+          ) : (
+            <>
+              <i className="bi bi-upload me-2"></i>
+              Upload File
+            </>
+          )}
         </Button>
         <Button 
           variant="outline-secondary" 

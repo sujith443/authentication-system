@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import './App.css';
 
 // Components
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import Login from './components/auth/Login';
-import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
 import UploadManager from './components/uploads/UploadManager';
 import Profile from './components/profile/Profile';
+import AdminManagement from './components/admin/AdminManagement';
 import NotFound from './components/common/NotFound';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -58,6 +59,11 @@ function App() {
     setIsAuthenticated(false);
   };
 
+  const updateUser = (updatedUserData) => {
+    localStorage.setItem('userData', JSON.stringify(updatedUserData));
+    setUser(updatedUserData);
+  };
+
   if (loading) {
     return (
       <div className="app-loading d-flex justify-content-center align-items-center">
@@ -78,7 +84,6 @@ function App() {
               path="/" 
               element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login onLogin={loginUser} />} 
             />
-            <Route path="/register" element={<Register />} />
             <Route 
               path="/dashboard" 
               element={
@@ -99,7 +104,15 @@ function App() {
               path="/profile" 
               element={
                 <ProtectedRoute isAuth={isAuthenticated}>
-                  <Profile user={user} setUser={setUser} />
+                  <Profile user={user} setUser={updateUser} />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/manage" 
+              element={
+                <ProtectedRoute isAuth={isAuthenticated}>
+                  <AdminManagement user={user} />
                 </ProtectedRoute>
               } 
             />

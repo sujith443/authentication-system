@@ -13,14 +13,26 @@ const UploadManager = ({ user }) => {
   const [fileToDelete, setFileToDelete] = useState(null);
 
   useEffect(() => {
-    // Start with an empty array instead of demo files
-    setFiles([]);
+    // Load uploads from localStorage
+    const storedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+    setFiles(storedFiles);
     setIsLoading(false);
   }, []);
 
   const handleUploadSuccess = (newFile) => {
     if (newFile) {
-      setFiles([newFile, ...files]);
+      // Add admin info to the file
+      const fileWithAdmin = {
+        ...newFile,
+        uploadedBy: user.name,
+        uploadedById: user.id
+      };
+      
+      const updatedFiles = [fileWithAdmin, ...files];
+      setFiles(updatedFiles);
+      
+      // Update localStorage
+      localStorage.setItem('uploadedFiles', JSON.stringify(updatedFiles));
     }
     setShowUploadModal(false);
   };
@@ -40,6 +52,10 @@ const UploadManager = ({ user }) => {
     }
     
     setFiles(updatedFiles);
+    
+    // Update localStorage
+    localStorage.setItem('uploadedFiles', JSON.stringify(updatedFiles));
+    
     setShowDeleteModal(false);
     setFileToDelete(null);
   };
@@ -59,7 +75,10 @@ const UploadManager = ({ user }) => {
       document.body.removeChild(link);
     } catch (error) {
       console.error("Error downloading file:", error);
-      alert("Error downloading file. Please try again.");
+      setError("Error downloading file. Please try again.");
+      
+      // Clear error after 3 seconds
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -72,11 +91,17 @@ const UploadManager = ({ user }) => {
           printWindow.print();
         }, 1000); // Give it time to load before printing
       } else {
-        alert("Please allow pop-ups to print the file");
+        setError("Please allow pop-ups to print the file");
+        
+        // Clear error after 3 seconds
+        setTimeout(() => setError(null), 3000);
       }
     } catch (error) {
       console.error("Error printing file:", error);
-      alert("There was an error printing the file. Please try downloading it first.");
+      setError("There was an error printing the file. Please try downloading it first.");
+      
+      // Clear error after 3 seconds
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -128,7 +153,6 @@ const UploadManager = ({ user }) => {
           </div>
         );
       case 'text':
-        // For text files, we could fetch and display the content
         return (
           <div className="p-3 border rounded bg-light">
             <div className="text-center mb-3">
@@ -165,13 +189,13 @@ const UploadManager = ({ user }) => {
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <h1 className="mb-1">Upload Manager</h1>
-              <p className="text-muted">Manage your document uploads</p>
+              <p className="text-muted">Manage document uploads</p>
             </div>
             <Button 
               variant="primary" 
               onClick={() => setShowUploadModal(true)}
             >
-              <span className="me-2">↑</span>
+              <i className="bi bi-upload me-2"></i>
               Upload New File
             </Button>
           </div>
@@ -183,7 +207,7 @@ const UploadManager = ({ user }) => {
           <Card>
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Your Uploads</h5>
+                <h5 className="mb-0">All Uploads</h5>
               </div>
               
               {error && (
@@ -197,17 +221,24 @@ const UploadManager = ({ user }) => {
                   <div className="spinner-border text-primary" role="status">
                     <span className="visually-hidden">Loading...</span>
                   </div>
-                  <p className="mt-2 text-muted">Loading your files...</p>
+                  <p className="mt-2 text-muted">Loading files...</p>
                 </div>
               ) : files.length === 0 ? (
                 <div className="text-center py-4">
                   <div className="mb-3">
-                    <span style={{ fontSize: '3rem' }}>📂</span>
+                    <i className="bi bi-folder2 text-muted" style={{ fontSize: '3rem' }}></i>
                   </div>
                   <h5>No files found</h5>
                   <p className="text-muted">
-                    You haven't uploaded any files yet
+                    No files have been uploaded yet
                   </p>
+                  <Button 
+                    variant="primary" 
+                    onClick={() => setShowUploadModal(true)}
+                  >
+                    <i className="bi bi-upload me-2"></i>
+                    Upload First File
+                  </Button>
                 </div>
               ) : (
                 <div className="table-responsive">
@@ -215,7 +246,8 @@ const UploadManager = ({ user }) => {
                     <thead>
                       <tr>
                         <th>File Name</th>
-                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Uploaded By</th>
                         <th>Upload Date</th>
                         <th>Size</th>
                         <th>Actions</th>
@@ -235,10 +267,12 @@ const UploadManager = ({ user }) => {
                               </div>
                               <div>
                                 <span className="fw-medium">{file.name}</span>
+                                <div className="small text-muted">{file.description}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="text-muted small">{file.description}</td>
+                          <td>{file.category || 'Uncategorized'}</td>
+                          <td>{file.uploadedBy || 'Admin'}</td>
                           <td>{formatDate(file.uploadDate)}</td>
                           <td>{file.size}</td>
                           <td>
@@ -249,7 +283,7 @@ const UploadManager = ({ user }) => {
                                 onClick={() => handleViewFile(file)}
                                 title="View File"
                               >
-                                👁️ View
+                                <i className="bi bi-eye"></i>
                               </Button>
                               <Button 
                                 variant="outline-success" 
@@ -257,7 +291,7 @@ const UploadManager = ({ user }) => {
                                 onClick={() => handleDownloadFile(file)}
                                 title="Download File"
                               >
-                                ⬇️ Download
+                                <i className="bi bi-download"></i>
                               </Button>
                               <Button 
                                 variant="outline-danger" 
@@ -265,7 +299,7 @@ const UploadManager = ({ user }) => {
                                 onClick={() => handleDeleteFile(file)}
                                 title="Delete File"
                               >
-                                🗑️ Delete
+                                <i className="bi bi-trash"></i>
                               </Button>
                             </div>
                           </td>
@@ -343,8 +377,10 @@ const UploadManager = ({ user }) => {
                   <div className="col-md-6">
                     <p className="mb-1"><strong>Size:</strong> {selectedFile.size}</p>
                     <p className="mb-1"><strong>Upload Date:</strong> {formatDate(selectedFile.uploadDate)}</p>
+                    <p className="mb-1"><strong>Category:</strong> {selectedFile.category || 'Uncategorized'}</p>
                   </div>
                   <div className="col-md-6">
+                    <p className="mb-1"><strong>Uploaded By:</strong> {selectedFile.uploadedBy || 'Admin'}</p>
                     <p className="mb-1"><strong>Description:</strong> {selectedFile.description}</p>
                   </div>
                 </div>
@@ -356,19 +392,22 @@ const UploadManager = ({ user }) => {
                   variant="primary"
                   onClick={() => handleDownloadFile(selectedFile)}
                 >
-                  ⬇️ Download
+                  <i className="bi bi-download me-2"></i>
+                  Download
                 </Button>
                 <Button 
                   variant="success"
                   onClick={() => window.open(selectedFile.url, '_blank')}
                 >
-                  📄 Open in New Tab
+                  <i className="bi bi-box-arrow-up-right me-2"></i>
+                  Open in New Tab
                 </Button>
                 <Button 
                   variant="outline-secondary"
                   onClick={() => handlePrintFile(selectedFile)}
                 >
-                  🖨️ Print
+                  <i className="bi bi-printer me-2"></i>
+                  Print
                 </Button>
               </div>
             </Modal.Body>

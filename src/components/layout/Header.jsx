@@ -22,12 +22,12 @@ const Header = ({ isAuthenticated, user, onLogout }) => {
       <Container>
         <Navbar.Brand as={Link} to={isAuthenticated ? "/dashboard" : "/"}>
           <img
-            src={"https://svitatp.ac.in/public/assets/admin/images/sitesetting/664263736b243_SVIT%20LOGO.png"}
+            src="https://svitatp.ac.in/public/assets/admin/images/sitesetting/664263736b243_SVIT%20LOGO.png"
             height="40"
             className="d-inline-block align-top me-2"
             alt="SVIT College Logo"
           />
-          <span className="fw-bold text-primary">SVIT</span> Portal
+          <span className="fw-bold text-primary">SVIT</span> Admin Portal
         </Navbar.Brand>
         
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -49,13 +49,25 @@ const Header = ({ isAuthenticated, user, onLogout }) => {
                 >
                   Upload Manager
                 </Nav.Link>
+                {user?.isAdmin && (
+                  <Nav.Link 
+                    as={Link} 
+                    to="/admin/manage" 
+                    onClick={() => setExpanded(false)}
+                  >
+                    Admin Management
+                  </Nav.Link>
+                )}
               </Nav>
               <Nav>
                 <NavDropdown 
                   title={
                     <span>
                       <i className="bi bi-person-circle me-1"></i>
-                      {user?.name || 'User'}
+                      {user?.name || 'Admin'}
+                      {user?.isSuperAdmin && (
+                        <span className="badge bg-danger text-white ms-1">Super</span>
+                      )}
                     </span>
                   } 
                   id="user-dropdown" 
@@ -88,21 +100,10 @@ const Header = ({ isAuthenticated, user, onLogout }) => {
                 <Button 
                   as={Link} 
                   to="/" 
-                  variant="outline-primary" 
-                  className="me-2"
-                  onClick={() => setExpanded(false)}
-                >
-                  Login
-                </Button>
-              </Nav.Item>
-              <Nav.Item>
-                <Button 
-                  as={Link} 
-                  to="/register" 
                   variant="primary"
                   onClick={() => setExpanded(false)}
                 >
-                  Register
+                  Admin Login
                 </Button>
               </Nav.Item>
             </Nav>
