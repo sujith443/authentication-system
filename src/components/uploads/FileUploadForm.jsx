@@ -18,6 +18,7 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
     'Research Paper',
     'Registration Form',
     'Image',
+    'Confidential',
     'Other'
   ];
   
@@ -187,7 +188,7 @@ const FileUploadForm = ({ onUploadSuccess, user }) => {
     } else if (['xls', 'xlsx'].includes(extension)) {
       return <i className="bi bi-file-earmark-excel"></i>;
     } else if (['ppt', 'pptx'].includes(extension)) {
-      return <i className="bi bi-file-earmark-ppt"></i>;
+      return <i className="bi bi-file-earmark-powerpoint"></i>;
     } else if (['txt', 'csv'].includes(extension)) {
       return <i className="bi bi-file-earmark-text"></i>;
     } else {
